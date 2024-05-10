@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Carregar os dados do CSV
 df = pd.read_csv("results.csv")
@@ -11,73 +12,60 @@ insertion_sort_data = df[df["Algorithm"] == "INSERTION_SORT"]
 bubble_sort_data = df[df["Algorithm"] == "BUBBLE_SORT"]
 
 # Gráfico 1: Comparação do tempo de execução serial entre os algoritmos
-plt.figure(figsize=(10, 6))
-for algo, data in [
-    ("Merge Sort", merge_sort_data),
-    ("Selection Sort", selection_sort_data),
-    ("Insertion Sort", insertion_sort_data),
-    ("Bubble Sort", bubble_sort_data),
-]:
-    plt.plot(
-        data["DataSize"],
-        data[data["ExecutionType"] == "Serial"]["AverageTime"],
-        label=algo,
-    )
+def plot_serial_execution_times(data):
+    # Calcular a média de tempo de execução para execuções seriais por algoritmo e tamanho de array
+    mean_times_serial = data[data['ExecutionType'] == 'Serial'].groupby(['Algorithm', 'DataSize'])['AverageTime'].mean().reset_index()
 
-plt.xlabel("Tamanho do Array")
-plt.ylabel("Tempo de Resposta (ms)")
-plt.title("Comparação do tempo de execução serial entre os algoritmos")
-plt.legend()
-plt.grid(True)
-plt.show()
+    # Criar o gráfico de linha para execuções seriais
+    plt.figure(figsize=(14, 8))
+    lineplot_serial = sns.lineplot(data=mean_times_serial, x='DataSize', y='AverageTime', hue='Algorithm', marker='o')
+
+    plt.title('Average Execution Times for Serial Executions Across Algorithms')
+    plt.xlabel('Array Size')
+    plt.ylabel('Average Execution Time (ms)')
+    plt.legend(title='Algorithm')
+    plt.show()
 
 # Gráfico 2: Comparação do tempo médio de execução paralela com o tempo de execução serial para cada algoritmo
-plt.figure(figsize=(12, 8))
-for algo, data in [
-    ("Merge Sort", merge_sort_data),
-    ("Selection Sort", selection_sort_data),
-    ("Insertion Sort", insertion_sort_data),
-    ("Bubble Sort", bubble_sort_data),
-]:
-    serial_time = data[data["ExecutionType"] == "Serial"]["AverageTime"].iloc[0]
-    parallel_data = data[data["ExecutionType"] == "Parallel"]
-    parallel_avg_time = parallel_data.groupby("DataSize")["AverageTime"].mean()
-    plt.plot(parallel_avg_time.index, parallel_avg_time, label=f"{algo} (Paralelo)")
-    plt.axhline(y=serial_time, linestyle="--", color="black", label=f"{algo} (Serial)")
+def plot_parallel_execution_times_mean(data):
+    # Calcular a média de tempo de execução para execuções paralelas por algoritmo e tamanho de array
+    mean_times = data[data['ExecutionType'] == 'Parallel'].groupby(['Algorithm', 'DataSize'])['AverageTime'].mean().reset_index()
 
-plt.xlabel("Tamanho do Array")
-plt.ylabel("Tempo de Resposta (ms)")
-plt.title(
-    "Comparação do tempo médio de execução paralela com o tempo de execução serial para cada algoritmo"
-)
-plt.legend()
-plt.grid(True)
-plt.show()
+    # Criar o gráfico de linha para execuções paralelas
+    plt.figure(figsize=(14, 8))
+    lineplot = sns.lineplot(data=mean_times, x='DataSize', y='AverageTime', hue='Algorithm', marker='o')
 
-# Gráfico 3: Comparação do tempo de resposta entre os 4 algoritmos para cada quantidade de núcleos
-array_size = 200000
-cores = [1, 4, 6, 8]
-plt.figure(figsize=(10, 6))
-for algo, data in [
-    ("Merge Sort", merge_sort_data),
-    ("Selection Sort", selection_sort_data),
-    ("Insertion Sort", insertion_sort_data),
-    ("Bubble Sort", bubble_sort_data),
-]:
-    avg_times = []
-    for core in cores:
-        avg_time = data[
-            (data["DataSize"] == array_size) & (data["ThreadCount"] == core)
-        ]["AverageTime"].iloc[0]
-        avg_times.append(avg_time)
-    plt.plot(cores, avg_times, marker="o", label=algo)
+    plt.title('Average Execution Times for Parallel Executions Across Algorithms')
+    plt.xlabel('Array Size')
+    plt.ylabel('Average Execution Time (ms)')
+    plt.legend(title='Algorithm')
+    plt.show()
 
-plt.xlabel("Núcleos")
-plt.ylabel("Tempo de Resposta (ms)")
-plt.title(
-    f"Comparação do tempo de resposta entre os 4 algoritmos para um array de tamanho {array_size}"
-)
-plt.xticks(cores)
-plt.legend()
-plt.grid(True)
-plt.show()
+# Gráficos 3 a 6: Comparação do tempo de resposta de acordo com a quantidade de núcleo de cada algoritmo
+def plot_parallel_execution_times_algorithm(data):
+    # Filtrar apenas as execuções paralelas
+    parallel_data = data[data['ExecutionType'] == 'Parallel']
+
+    # Definir estilo do gráfico
+    sns.set(style="whitegrid")
+
+    # Iterar sobre cada algoritmo único
+    for algorithm in parallel_data['Algorithm'].unique():
+        # Filtrar dados para o algoritmo atual
+        algorithm_data = parallel_data[parallel_data['Algorithm'] == algorithm]
+        
+        # Criar um gráfico de barras para cada algoritmo
+        plt.figure(figsize=(12, 8))
+        barplot = sns.barplot(x='DataSize', y='AverageTime', hue='ThreadCount', data=algorithm_data,
+                              palette='viridis')
+        
+        plt.title(f'Execution Times for {algorithm} - Parallel Execution')
+        plt.xlabel('Array Size')
+        plt.ylabel('Average Execution Time (ms)')
+        plt.legend(title='Number of Threads')
+        plt.show()
+
+
+plot_serial_execution_times(df)
+plot_parallel_execution_times_algorithm(df)
+plot_parallel_execution_times_mean(df)
