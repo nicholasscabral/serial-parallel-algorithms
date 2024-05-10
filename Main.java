@@ -13,7 +13,7 @@ public class Main {
     private static final int[] THREAD_COUNTS = {4, 6, MAX_NUM_THREADS};
 
     public static void main(String[] args) {
-        try (FileWriter writer = new FileWriter("performance_results.csv")) {
+        try (FileWriter writer = new FileWriter("results.csv")) {
             StringBuilder csvHeader = new StringBuilder("Algorithm,DataSize,ExecutionType,ThreadCount,AverageTime\n");
             writer.write(csvHeader.toString());
 

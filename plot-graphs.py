@@ -1,133 +1,83 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
 
+# Carregar os dados do CSV
+df = pd.read_csv("results.csv")
 
-# Função para plotar o gráfico de relação entre tempo de execução e tamanho do array para os algoritmos seriais
-def plot_serial_execution_time(df):
-    # Filtrar os dados para os algoritmos seriais
-    serial_df = df[df["ExecutionType"] == "Serial"]
+# Filtrar os dados para cada algoritmo
+merge_sort_data = df[df["Algorithm"] == "MERGE_SORT"]
+selection_sort_data = df[df["Algorithm"] == "SELECTION_SORT"]
+insertion_sort_data = df[df["Algorithm"] == "INSERTION_SORT"]
+bubble_sort_data = df[df["Algorithm"] == "BUBBLE_SORT"]
 
-    # Configurar o plot
-    plt.figure(figsize=(10, 6))
-
-    # Iterar por cada algoritmo
-    for algo in serial_df["Algorithm"].unique():
-        algo_data = serial_df[serial_df["Algorithm"] == algo]
-        # Plotar os dados
-        plt.plot(
-            algo_data["DataSize"], algo_data["AverageTime"], marker="o", label=algo
-        )
-
-    # Configurar rótulos e título
-    plt.xlabel("Tamanho do Array")
-    plt.ylabel("Tempo Médio de Execução (ms)")
-    plt.title("Tempo de Execução vs. Tamanho do Array para Algoritmos Seriais")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-
-    # Mostrar o plot
-    plt.show()
-
-
-# Função para plotar o gráfico de relação entre tempo de execução, número de threads e tamanho do array para os algoritmos paralelos
-def plot_parallel_execution_time(df):
-    # Filtrar os dados para incluir apenas execuções paralelas
-    parallel_data = df[df["ExecutionType"] == "Parallel"]
-
-    # Configurar a figura do matplotlib
-    plt.figure(figsize=(14, 10))
-
-    # Criar um gráfico de barras com seaborn
-    sns.barplot(
-        data=parallel_data,
-        x="DataSize",
-        y="AverageTime",
-        hue="Algorithm",
-        ci=None,
-        palette="deep",
+# Gráfico 1: Comparação do tempo de execução serial entre os algoritmos
+plt.figure(figsize=(10, 6))
+for algo, data in [
+    ("Merge Sort", merge_sort_data),
+    ("Selection Sort", selection_sort_data),
+    ("Insertion Sort", insertion_sort_data),
+    ("Bubble Sort", bubble_sort_data),
+]:
+    plt.plot(
+        data["DataSize"],
+        data[data["ExecutionType"] == "Serial"]["AverageTime"],
+        label=algo,
     )
 
-    # Melhorar o gráfico
-    plt.title("Performance da Execução Paralela")
-    plt.xlabel("Tamanho do Array")
-    plt.ylabel("Tempo Médio de Execução (ms)")
-    plt.legend(title="Algorithm", bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.grid(True)
+plt.xlabel("Tamanho do Array")
+plt.ylabel("Tempo de Resposta (ms)")
+plt.title("Comparação do tempo de execução serial entre os algoritmos")
+plt.legend()
+plt.grid(True)
+plt.show()
 
-    # Exibir o gráfico
-    plt.tight_layout()
-    plt.show()
+# Gráfico 2: Comparação do tempo médio de execução paralela com o tempo de execução serial para cada algoritmo
+plt.figure(figsize=(12, 8))
+for algo, data in [
+    ("Merge Sort", merge_sort_data),
+    ("Selection Sort", selection_sort_data),
+    ("Insertion Sort", insertion_sort_data),
+    ("Bubble Sort", bubble_sort_data),
+]:
+    serial_time = data[data["ExecutionType"] == "Serial"]["AverageTime"].iloc[0]
+    parallel_data = data[data["ExecutionType"] == "Parallel"]
+    parallel_avg_time = parallel_data.groupby("DataSize")["AverageTime"].mean()
+    plt.plot(parallel_avg_time.index, parallel_avg_time, label=f"{algo} (Paralelo)")
+    plt.axhline(y=serial_time, linestyle="--", color="black", label=f"{algo} (Serial)")
 
+plt.xlabel("Tamanho do Array")
+plt.ylabel("Tempo de Resposta (ms)")
+plt.title(
+    "Comparação do tempo médio de execução paralela com o tempo de execução serial para cada algoritmo"
+)
+plt.legend()
+plt.grid(True)
+plt.show()
 
-def plot_algorithm_comparison(data, algorithm_name):
-    # Filtrar dados para o algoritmo específico
-    algorithm_data = data[data["Algorithm"] == algorithm_name]
-    algorithm_data["DetalhesExecucao"] = algorithm_data.apply(
-        lambda x: (
-            f"{x['ExecutionType']} ({x['ThreadCount']} thread)"
-            if x["ExecutionType"] == "Serial"
-            else f"{x['ExecutionType']} ({x['ThreadCount']} threads)"
-        ),
-        axis=1,
-    )
+# Gráfico 3: Comparação do tempo de resposta entre os 4 algoritmos para cada quantidade de núcleos
+array_size = 200000
+cores = [1, 4, 6, 8]
+plt.figure(figsize=(10, 6))
+for algo, data in [
+    ("Merge Sort", merge_sort_data),
+    ("Selection Sort", selection_sort_data),
+    ("Insertion Sort", insertion_sort_data),
+    ("Bubble Sort", bubble_sort_data),
+]:
+    avg_times = []
+    for core in cores:
+        avg_time = data[
+            (data["DataSize"] == array_size) & (data["ThreadCount"] == core)
+        ]["AverageTime"].iloc[0]
+        avg_times.append(avg_time)
+    plt.plot(cores, avg_times, marker="o", label=algo)
 
-    # Pivotar os dados para o gráfico
-    pivot_algorithm = algorithm_data.pivot_table(
-        values="AverageTime",
-        index=["DataSize"],
-        columns="DetalhesExecucao",
-        aggfunc="mean",
-    ).fillna(0)
-
-    # Resetar o índice para facilitar a plotagem
-    pivot_algorithm.reset_index(inplace=True)
-
-    # Plotar o gráfico
-    plt.figure(figsize=(14, 10))
-    sns.barplot(
-        data=pivot_algorithm.melt(
-            id_vars=["DataSize"], value_vars=pivot_algorithm.columns[1:]
-        ),
-        x="DataSize",
-        y="value",
-        hue="DetalhesExecucao",
-        ci=None,
-        palette="deep",
-    )
-    plt.title(
-        f"Comparação Logarítmica dos Tempos de Execução Serial e Paralela para {algorithm_name}"
-    )
-    plt.xlabel("Tamanho do Array")
-    plt.ylabel("Tempo Médio (ms)")
-    plt.yscale("log")
-    plt.legend(
-        title="Tipo de Execução / Processadores",
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left",
-    )
-    plt.grid(True)
-    plt.show()
-
-
-# Função principal
-def main():
-    # Ler o arquivo CSV para um DataFrame
-    df = pd.read_csv("performance_results.csv")
-
-    # Plotar o tempo de execução serial
-    plot_serial_execution_time(df)
-
-    # Plotar o tempo de execução paralelo
-    plot_parallel_execution_time(df)
-
-    # Gerar gráficos para todos os algoritmos, incluindo Merge Sort
-    for algorithm in ["MERGE_SORT", "SELECTION_SORT", "INSERTION_SORT", "BUBBLE_SORT"]:
-        plot_algorithm_comparison(df, algorithm)
-
-
-# Executar a função principal
-if __name__ == "__main__":
-    main()
+plt.xlabel("Núcleos")
+plt.ylabel("Tempo de Resposta (ms)")
+plt.title(
+    f"Comparação do tempo de resposta entre os 4 algoritmos para um array de tamanho {array_size}"
+)
+plt.xticks(cores)
+plt.legend()
+plt.grid(True)
+plt.show()
