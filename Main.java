@@ -5,8 +5,8 @@ import java.io.InputStreamReader;
 import java.util.Random;
 
 public class Main {
-    // private static final int[] ARRAY_SIZES = {2000, 4000, 5000, 6000, 7000};
-    private static final int[] ARRAY_SIZES = {300, 400, 500, 600, 700};
+    private static final int[] ARRAY_SIZES = {50000, 100000, 150000, 200000, 250000, 300000};
+    // private static final int[] ARRAY_SIZES = {300, 400, 500, 600, 700};
 
     private static final int NUM_SAMPLES = 5;
     private static final int MAX_NUM_THREADS = Runtime.getRuntime().availableProcessors();
@@ -23,9 +23,9 @@ public class Main {
                     Random random = new Random();
                     for (int sample = 0; sample < NUM_SAMPLES; sample++) {
                         int[] data = generateRandomArray(dataSize, random);
-                        long startTime = System.nanoTime();
+                        long startTime = System.currentTimeMillis();
                         algorithm.sort(data);
-                        long endTime = System.nanoTime();
+                        long endTime = System.currentTimeMillis();
                         serialTimeSum += (endTime - startTime);
                     }
                     long serialTimeAvg = serialTimeSum / NUM_SAMPLES;
@@ -36,9 +36,9 @@ public class Main {
                         long parallelTimeSum = 0;
                         for (int sample = 0; sample < NUM_SAMPLES; sample++) {
                             int[] data = generateRandomArray(dataSize, random);
-                            long startTime = System.nanoTime();
+                            long startTime = System.currentTimeMillis();
                             algorithm.parallelSort(data, numThreads);
-                            long endTime = System.nanoTime();
+                            long endTime = System.currentTimeMillis();
                             parallelTimeSum += (endTime - startTime);
                         }
                         long parallelTimeAvg = parallelTimeSum / NUM_SAMPLES;
@@ -84,6 +84,7 @@ public class Main {
     private static void writeResultToCSV(FileWriter writer, String algorithm, int dataSize, String executionType, int threadCount, long averageTime) throws IOException {
         StringBuilder csvRow = new StringBuilder(algorithm + "," + dataSize + "," + executionType + "," + threadCount + "," + averageTime + "\n");
         writer.write(csvRow.toString());
+        writer.flush();
     }
 
     private enum SortingAlgorithm {
@@ -106,7 +107,7 @@ public class Main {
 
             @Override
             public void parallelSort(int[] arr, int numThreads) {
-                ParallelSortAlgorithms.selectionSort(arr);
+                ParallelSortAlgorithms.selectionSort(arr, numThreads);
             }
         },
         INSERTION_SORT {
@@ -117,7 +118,7 @@ public class Main {
 
             @Override
             public void parallelSort(int[] arr, int numThreads) {
-                ParallelSortAlgorithms.insertionSort(arr);
+                ParallelSortAlgorithms.insertionSort(arr, numThreads);
             }
         },
         BUBBLE_SORT {
@@ -128,7 +129,7 @@ public class Main {
 
             @Override
             public void parallelSort(int[] arr, int numThreads) {
-                ParallelSortAlgorithms.bubbleSort(arr);
+                ParallelSortAlgorithms.bubbleSort(arr, numThreads);
             }
         };
 

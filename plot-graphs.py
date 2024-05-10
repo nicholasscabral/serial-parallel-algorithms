@@ -22,7 +22,7 @@ def plot_serial_execution_time(df):
 
     # Configurar rótulos e título
     plt.xlabel("Tamanho do Array")
-    plt.ylabel("Tempo Médio de Execução (ns)")
+    plt.ylabel("Tempo Médio de Execução (ms)")
     plt.title("Tempo de Execução vs. Tamanho do Array para Algoritmos Seriais")
     plt.legend()
     plt.grid(True)
@@ -35,39 +35,51 @@ def plot_serial_execution_time(df):
 # Função para plotar o gráfico de relação entre tempo de execução, número de threads e tamanho do array para os algoritmos paralelos
 def plot_parallel_execution_time(df):
     # Filtrar os dados para incluir apenas execuções paralelas
-    parallel_data = df[df['ExecutionType'] == 'Parallel']
+    parallel_data = df[df["ExecutionType"] == "Parallel"]
 
     # Configurar a figura do matplotlib
     plt.figure(figsize=(14, 10))
 
     # Criar um gráfico de barras com seaborn
-    sns.barplot(data=parallel_data, x='DataSize', y='AverageTime', hue='Algorithm', ci=None, palette='deep')
+    sns.barplot(
+        data=parallel_data,
+        x="DataSize",
+        y="AverageTime",
+        hue="Algorithm",
+        ci=None,
+        palette="deep",
+    )
 
     # Melhorar o gráfico
-    plt.title('Performance da Execução Paralela')
-    plt.xlabel('Tamanho do Array')
-    plt.ylabel('Tempo Médio de Execução (ns)')
-    plt.legend(title='Algorithm', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.title("Performance da Execução Paralela")
+    plt.xlabel("Tamanho do Array")
+    plt.ylabel("Tempo Médio de Execução (ms)")
+    plt.legend(title="Algorithm", bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.grid(True)
 
     # Exibir o gráfico
     plt.tight_layout()
     plt.show()
 
+
 def plot_algorithm_comparison(data, algorithm_name):
     # Filtrar dados para o algoritmo específico
-    algorithm_data = data[data['Algorithm'] == algorithm_name]
-    algorithm_data['DetalhesExecucao'] = algorithm_data.apply(
-        lambda x: f"{x['ExecutionType']} ({x['ThreadCount']} thread)" if x['ExecutionType'] == 'Serial' else f"{x['ExecutionType']} ({x['ThreadCount']} threads)",
-        axis=1
+    algorithm_data = data[data["Algorithm"] == algorithm_name]
+    algorithm_data["DetalhesExecucao"] = algorithm_data.apply(
+        lambda x: (
+            f"{x['ExecutionType']} ({x['ThreadCount']} thread)"
+            if x["ExecutionType"] == "Serial"
+            else f"{x['ExecutionType']} ({x['ThreadCount']} threads)"
+        ),
+        axis=1,
     )
 
     # Pivotar os dados para o gráfico
     pivot_algorithm = algorithm_data.pivot_table(
-        values='AverageTime',
-        index=['DataSize'],
-        columns='DetalhesExecucao',
-        aggfunc='mean'
+        values="AverageTime",
+        index=["DataSize"],
+        columns="DetalhesExecucao",
+        aggfunc="mean",
     ).fillna(0)
 
     # Resetar o índice para facilitar a plotagem
@@ -76,18 +88,26 @@ def plot_algorithm_comparison(data, algorithm_name):
     # Plotar o gráfico
     plt.figure(figsize=(14, 10))
     sns.barplot(
-        data=pivot_algorithm.melt(id_vars=['DataSize'], value_vars=pivot_algorithm.columns[1:]),
-        x='DataSize',
-        y='value',
-        hue='DetalhesExecucao',
+        data=pivot_algorithm.melt(
+            id_vars=["DataSize"], value_vars=pivot_algorithm.columns[1:]
+        ),
+        x="DataSize",
+        y="value",
+        hue="DetalhesExecucao",
         ci=None,
-        palette='deep'
+        palette="deep",
     )
-    plt.title(f'Comparação Logarítmica dos Tempos de Execução Serial e Paralela para {algorithm_name}')
-    plt.xlabel('Tamanho do Array')
-    plt.ylabel('Tempo Médio (ns)')
-    plt.yscale('log')
-    plt.legend(title='Tipo de Execução / Processadores', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.title(
+        f"Comparação Logarítmica dos Tempos de Execução Serial e Paralela para {algorithm_name}"
+    )
+    plt.xlabel("Tamanho do Array")
+    plt.ylabel("Tempo Médio (ms)")
+    plt.yscale("log")
+    plt.legend(
+        title="Tipo de Execução / Processadores",
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+    )
     plt.grid(True)
     plt.show()
 
@@ -104,7 +124,7 @@ def main():
     plot_parallel_execution_time(df)
 
     # Gerar gráficos para todos os algoritmos, incluindo Merge Sort
-    for algorithm in ['MERGE_SORT', 'SELECTION_SORT', 'INSERTION_SORT', 'BUBBLE_SORT']:
+    for algorithm in ["MERGE_SORT", "SELECTION_SORT", "INSERTION_SORT", "BUBBLE_SORT"]:
         plot_algorithm_comparison(df, algorithm)
 
 
